@@ -1,1 +1,193 @@
-a
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>オセロゲーム</title>
+<style>
+body{
+    font-family: sans-serif;
+    text-align:center;
+    background:#2e7d32;
+    color:white;
+}
+
+h1{
+    margin-top:10px;
+}
+
+#board{
+    margin:20px auto;
+    display:grid;
+    grid-template-columns:repeat(8,60px);
+    grid-template-rows:repeat(8,60px);
+    width:480px;
+    border:4px solid #1b5e20;
+}
+
+.cell{
+    width:60px;
+    height:60px;
+    border:1px solid #1b5e20;
+    background:#388e3c;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    cursor:pointer;
+}
+
+.disk{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+}
+
+.black{
+    background:black;
+}
+
+.white{
+    background:white;
+}
+
+#info{
+    font-size:20px;
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>オセロゲーム</h1>
+<div id="info">黒のターン</div>
+<div id="board"></div>
+
+<script>
+
+const boardSize = 8
+let board = []
+let currentPlayer = 1
+
+const boardElement = document.getElementById("board")
+const info = document.getElementById("info")
+
+function initBoard(){
+
+    board = Array(boardSize).fill().map(()=>Array(boardSize).fill(0))
+
+    board[3][3] = 2
+    board[3][4] = 1
+    board[4][3] = 1
+    board[4][4] = 2
+
+    drawBoard()
+}
+
+function drawBoard(){
+
+    boardElement.innerHTML = ""
+
+    for(let y=0;y<boardSize;y++){
+        for(let x=0;x<boardSize;x++){
+
+            const cell = document.createElement("div")
+            cell.className="cell"
+            cell.dataset.x=x
+            cell.dataset.y=y
+
+            cell.addEventListener("click",placeDisk)
+
+            if(board[y][x]!==0){
+                const disk = document.createElement("div")
+                disk.className="disk " + (board[y][x]===1?"black":"white")
+                cell.appendChild(disk)
+            }
+
+            boardElement.appendChild(cell)
+        }
+    }
+
+    updateInfo()
+}
+
+function placeDisk(e){
+
+    const x = parseInt(e.currentTarget.dataset.x)
+    const y = parseInt(e.currentTarget.dataset.y)
+
+    if(board[y][x]!==0) return
+
+    const flips = getFlips(x,y,currentPlayer)
+
+    if(flips.length===0) return
+
+    board[y][x]=currentPlayer
+
+    flips.forEach(pos=>{
+        board[pos.y][pos.x]=currentPlayer
+    })
+
+    currentPlayer = currentPlayer===1?2:1
+
+    drawBoard()
+}
+
+function getFlips(x,y,player){
+
+    const opponent = player===1?2:1
+    const directions = [
+        {x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1},
+        {x:1,y:1},{x:-1,y:-1},{x:1,y:-1},{x:-1,y:1}
+    ]
+
+    let flips=[]
+
+    directions.forEach(dir=>{
+
+        let nx=x+dir.x
+        let ny=y+dir.y
+        let temp=[]
+
+        while(nx>=0 && nx<8 && ny>=0 && ny<8){
+
+            if(board[ny][nx]===opponent){
+                temp.push({x:nx,y:ny})
+            }else if(board[ny][nx]===player){
+                flips = flips.concat(temp)
+                break
+            }else{
+                break
+            }
+
+            nx+=dir.x
+            ny+=dir.y
+        }
+
+    })
+
+    return flips
+}
+
+function updateInfo(){
+
+    let black=0
+    let white=0
+
+    board.forEach(row=>{
+        row.forEach(cell=>{
+            if(cell===1) black++
+            if(cell===2) white++
+        })
+    })
+
+    const turn = currentPlayer===1 ? "黒" : "白"
+
+    info.textContent = `ターン: ${turn}　黒:${black}　白:${white}`
+}
+
+initBoard()
+
+</script>
+
+</body>
+</html>
