@@ -3,16 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <title>オセロゲーム</title>
+
 <style>
+
 body{
-    font-family: sans-serif;
+    font-family:sans-serif;
     text-align:center;
     background:#2e7d32;
     color:white;
-}
-
-h1{
-    margin-top:10px;
 }
 
 #board{
@@ -41,32 +39,40 @@ h1{
     border-radius:50%;
 }
 
-.black{
-    background:black;
-}
-
-.white{
-    background:white;
-}
+.black{background:black;}
+.white{background:white;}
 
 #info{
     font-size:20px;
     margin-top:10px;
 }
+
+button{
+    margin-top:10px;
+    padding:10px 20px;
+    font-size:16px;
+    cursor:pointer;
+}
+
 </style>
 </head>
 
 <body>
 
 <h1>オセロゲーム</h1>
-<div id="info">黒のターン</div>
+
+<div id="info"></div>
+
 <div id="board"></div>
+
+<button onclick="initBoard()">リセット</button>
 
 <script>
 
 const boardSize = 8
 let board = []
 let currentPlayer = 1
+let gameOver = false
 
 const boardElement = document.getElementById("board")
 const info = document.getElementById("info")
@@ -80,17 +86,20 @@ function initBoard(){
     board[4][3] = 1
     board[4][4] = 2
 
+    currentPlayer = 1
+    gameOver = false
+
     drawBoard()
 }
 
 function drawBoard(){
 
-    boardElement.innerHTML = ""
+    boardElement.innerHTML=""
 
     for(let y=0;y<boardSize;y++){
         for(let x=0;x<boardSize;x++){
 
-            const cell = document.createElement("div")
+            const cell=document.createElement("div")
             cell.className="cell"
             cell.dataset.x=x
             cell.dataset.y=y
@@ -98,9 +107,11 @@ function drawBoard(){
             cell.addEventListener("click",placeDisk)
 
             if(board[y][x]!==0){
-                const disk = document.createElement("div")
-                disk.className="disk " + (board[y][x]===1?"black":"white")
+
+                const disk=document.createElement("div")
+                disk.className="disk "+(board[y][x]===1?"black":"white")
                 cell.appendChild(disk)
+
             }
 
             boardElement.appendChild(cell)
@@ -112,30 +123,35 @@ function drawBoard(){
 
 function placeDisk(e){
 
-    const x = parseInt(e.currentTarget.dataset.x)
-    const y = parseInt(e.currentTarget.dataset.y)
+    if(gameOver) return
+
+    const x=parseInt(e.currentTarget.dataset.x)
+    const y=parseInt(e.currentTarget.dataset.y)
 
     if(board[y][x]!==0) return
 
-    const flips = getFlips(x,y,currentPlayer)
+    const flips=getFlips(x,y,currentPlayer)
 
     if(flips.length===0) return
 
     board[y][x]=currentPlayer
 
-    flips.forEach(pos=>{
-        board[pos.y][pos.x]=currentPlayer
+    flips.forEach(p=>{
+        board[p.y][p.x]=currentPlayer
     })
 
-    currentPlayer = currentPlayer===1?2:1
+    currentPlayer=currentPlayer===1?2:1
+
+    checkGameEnd()
 
     drawBoard()
 }
 
 function getFlips(x,y,player){
 
-    const opponent = player===1?2:1
-    const directions = [
+    const opponent=player===1?2:1
+
+    const directions=[
         {x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1},
         {x:1,y:1},{x:-1,y:-1},{x:1,y:-1},{x:-1,y:1}
     ]
@@ -152,10 +168,12 @@ function getFlips(x,y,player){
 
             if(board[ny][nx]===opponent){
                 temp.push({x:nx,y:ny})
-            }else if(board[ny][nx]===player){
-                flips = flips.concat(temp)
+            }
+            else if(board[ny][nx]===player){
+                flips=flips.concat(temp)
                 break
-            }else{
+            }
+            else{
                 break
             }
 
@@ -168,7 +186,7 @@ function getFlips(x,y,player){
     return flips
 }
 
-function updateInfo(){
+function countDisks(){
 
     let black=0
     let white=0
@@ -180,9 +198,63 @@ function updateInfo(){
         })
     })
 
-    const turn = currentPlayer===1 ? "黒" : "白"
+    return {black,white}
+}
 
-    info.textContent = `ターン: ${turn}　黒:${black}　白:${white}`
+function hasValidMove(player){
+
+    for(let y=0;y<8;y++){
+        for(let x=0;x<8;x++){
+
+            if(board[y][x]===0){
+
+                if(getFlips(x,y,player).length>0){
+                    return true
+                }
+
+            }
+
+        }
+    }
+
+    return false
+}
+
+function checkGameEnd(){
+
+    if(hasValidMove(currentPlayer)) return
+
+    if(hasValidMove(currentPlayer===1?2:1)){
+
+        currentPlayer=currentPlayer===1?2:1
+        return
+
+    }
+
+    gameOver=true
+}
+
+function updateInfo(){
+
+    const {black,white}=countDisks()
+
+    if(gameOver){
+
+        let result="引き分け"
+
+        if(black>white) result="黒の勝ち"
+        if(white>black) result="白の勝ち"
+
+        info.textContent=`ゲーム終了　黒:${black}　白:${white}　→ ${result}`
+
+    }else{
+
+        const turn=currentPlayer===1?"黒":"白"
+
+        info.textContent=`ターン: ${turn}　黒:${black}　白:${white}`
+
+    }
+
 }
 
 initBoard()
